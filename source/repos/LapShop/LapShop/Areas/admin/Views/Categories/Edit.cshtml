@@ -19,6 +19,9 @@
                     <p class="card-description"> Basic form layout </p>
                     <form class="forms-sample" method="post" enctype="multipart/form-data"
                           asp-controller="Categories" asp-action="Save" role="form">
+                          <input asp-for= "CategoryId" type="hidden" />
+                          <input asp-for="CreatedBy" type="hidden" />
+                          <input asp-for="CreatedDate" type="hidden" />
                         <div class="form-group">
                             <label for="exampleInputUsername1">@ResAdmin.lblCategoryName</label>
                             <input asp-for="CategoryName" type="text" class="form-control" placeholder="Category Name">
