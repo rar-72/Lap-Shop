@@ -1,19 +1,18 @@
-﻿
+﻿using LapShop.Bl;
 using LapShop.Models;
 using Microsoft.AspNetCore.Mvc;
-
 namespace LapShop.Areas.admin.Controllers
 {
     [Area("admin")]
     public class CategoriesController : Controller
     {
 
+        ClsCategories oclsCategories = new ClsCategories();
 
         public IActionResult List()
         {
-            LapShopContext Context = new LapShopContext();
-            var listCategories = Context.TbCategories.ToList();
-            return View(listCategories);
+
+            return View(oclsCategories.GetAll());
         }
 
         public IActionResult Edit(int? categoryId)
@@ -21,8 +20,7 @@ namespace LapShop.Areas.admin.Controllers
             var Category = new TbCategory();
             if (categoryId != null)
             {
-                LapShopContext Context = new LapShopContext();
-                Category = Context.TbCategories.FirstOrDefault(a => a.CategoryId == categoryId);
+                Category = oclsCategories.GetById(Convert.ToInt32(categoryId));
             }
             return View(Category);
         }
@@ -31,30 +29,40 @@ namespace LapShop.Areas.admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
 
-        public IActionResult Save(TbCategory category)
+        public async Task<IActionResult> Save(TbCategory category, List<IFormFile> Files)
         {
             if (!ModelState.IsValid)
                 return View("Edit", category);
 
-            LapShopContext Context = new LapShopContext();
-            category.ImageName = "";
-            if (category.CategoryId == 0)
-            {
-                category.CreatedBy = "1";
-                category.CreatedDate = DateTime.Now;
-                Context.TbCategories.Add(category);
-            }
-            else
-            {
-                category.UpdatedBy = "1";
-                category.UpdatedDate = DateTime.Now;
-                Context.Entry(category).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-            }
+            category.ImageName = await UploadImage(Files);
 
-
-            Context.SaveChanges();
+            oclsCategories.Save(category);
 
             return RedirectToAction("List");
+        }
+
+        public IActionResult Delete(int categoryId)
+        {
+            oclsCategories.Delete(categoryId);
+            return RedirectToAction("List");
+        }
+
+        async Task<string> UploadImage(List<IFormFile> Files)
+        {
+            foreach (var file in Files)
+            {
+                if (file.Length > 0)
+                {
+                    string ImageName = Guid.NewGuid().ToString() + DateTime.Now.Year + DateTime.Now.Month + DateTime.Now.Day + ".jpg";
+                    var filePaths = Path.Combine(Directory.GetCurrentDirectory(), @"wwwroot\Uploads/Categories", ImageName);
+                    using (var stream = System.IO.File.Create(filePaths))
+                    {
+                        await file.CopyToAsync(stream);
+                        return ImageName;
+                    }
+                }
+            }
+            return string.Empty;
         }
     }
 }
